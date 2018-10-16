@@ -1,0 +1,163 @@
+unit Main;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
+  StdCtrls, RichMemo;
+
+type
+
+  { TForm1 }
+
+  TForm1 = class(TForm)
+    Button1: TButton;
+    edt_titulo: TEdit;
+    edt_subtitulo: TEdit;
+    edt_qtd: TEdit;
+    Image1: TImage;
+    Label1: TLabel;
+    lbl_num1: TLabel;
+    lbl_num2: TLabel;
+    Memo1: TMemo;
+    memo_mensagem: TMemo;
+    Panel1: TPanel;
+    Panel2: TPanel;
+    procedure Button1Click(Sender: TObject);
+    procedure salvaFichas(caminho: String; panel: TPanel);
+    procedure DeleteDir(const DirName: string);
+    function BmpToPNG(Bmp : TBitmap) : TPortableNetworkGraphic;
+  private
+    { private declarations }
+  public
+    { public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.lfm}
+
+{ TForm1 }
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  i, j, qtd: integer;
+  caminho: String;
+begin
+
+  if trystrtoint(edt_qtd.Text, i) then
+  begin
+
+       caminho := extractfilepath(Application.ExeName)+ 'imagens_' + edt_titulo.Text;
+
+       if not DirectoryExists(caminho) then
+       begin
+          ForceDirectories(caminho);
+       end
+       else
+       begin
+            DeleteDir(caminho);
+            ForceDirectories(caminho);
+       end;
+
+       qtd := strtoint(edt_qtd.Text);
+
+       j := 0;
+
+       while(j < qtd) do
+       begin
+
+         lbl_num1.Caption := inttostr(j+1);
+         lbl_num2.Caption := inttostr(j+1);
+
+         salvaFichas(caminho+'\img_'+inttostr(j+1)+'.bmp', panel1);
+
+         j := j + 1;
+       end;
+
+  end;
+
+end;
+
+procedure TForm1.DeleteDir(const DirName: string);
+var
+  Path: string;
+  F: TSearchRec;
+
+
+begin
+  Path:= DirName + '\*.*';
+  if FindFirst(Path, faAnyFile, F) = 0 then begin
+    try
+      repeat
+        if (F.Attr and faDirectory <> 0) then begin
+          if (F.Name <> '.') and (F.Name <> '..') then begin
+            DeleteDir(DirName + '\' + F.Name);
+          end;
+        end
+        else
+          DeleteFile(DirName + '\' + F.Name);
+      until FindNext(F) <> 0;
+    finally
+      FindClose(F);
+    end;
+  end;
+  RemoveDir(DirName);
+end;
+
+function TForm1.BmpToPNG(Bmp : TBitmap) : TPortableNetworkGraphic;
+begin
+  Result := TPortableNetworkGraphic.Create;
+  Result.Assign(Bmp);
+end;
+
+procedure TForm1.salvaFichas(caminho: String; panel: TPanel);
+var
+  bmp: TBitmap;
+  png: TPortableNetworkGraphic;
+begin
+  bmp := TBitmap.Create;
+  try
+    bmp.Width := panel.ClientWidth;
+    bmp.Height := panel.ClientHeight;
+    bmp.Canvas.Brush := panel.Brush;
+    bmp.Canvas.FillRect(panel.ClientRect);
+    bmp.Canvas.Lock;
+    panel.PaintTo(bmp.Canvas.Handle, 0, 0);
+    bmp.Canvas.Unlock;
+    png := BmpToPNG(bmp);
+    png.SaveToFile(caminho);
+  finally
+    bmp.Free;
+    png.free;
+  end;
+end;
+
+end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
